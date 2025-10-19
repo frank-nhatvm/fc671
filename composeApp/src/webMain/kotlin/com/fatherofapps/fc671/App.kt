@@ -45,6 +45,9 @@ import fc671.composeapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.Flow
 
 @Preview
@@ -52,24 +55,8 @@ import kotlinx.coroutines.flow.Flow
 fun App(
     viewModel: AppViewModel = viewModel { AppViewModel() },
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    var isSignedInAsHost by remember { mutableStateOf(false) }
-
-    var isSigningInAsHost by remember { mutableStateOf(false) }
-
-    var hostName by remember { mutableStateOf("") }
-    var hostPassword by remember { mutableStateOf("") }
-
-    val aMatchOnGoing by remember(uiState) {
-        derivedStateOf {
-            uiState.matches.any { it.onGoing }
-        }
-    }
-
-
+    val navController = rememberNavController()
     MaterialTheme {
-
 
         Box(
             modifier = Modifier
@@ -79,154 +66,25 @@ fun App(
                 ), // Full height & width
             contentAlignment = Alignment.TopCenter // Center horizontally for large screens
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize().widthIn(max = 420.dp)
-                    .safeContentPadding(),
-                horizontalAlignment = Alignment.Start,
-            ) {
-
-
-                Column {
-                    Text("Chủ xị có quyền tạo danh sách người chơi, chọn đội trưởng và điều phối việc chọn team.")
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        if (isSignedInAsHost) {
-                            Text("Bạn đang là chủ xị")
+            NavHost(navController, startDestination = "home") {
+                composable("home") {
+                    HomeScreen(viewModel = viewModel, onCreateMatch = { navController.navigate("create_match")},
+                        onViewHistories = {
+                            navController.navigate("match_histories")
                         }
-                        val textButton =
-                            if (isSigningInAsHost) {
-                                "Huỷ"
-                            } else if (isSignedInAsHost) {
-                                "Đăng xuất"
-                            } else {
-                                "Đăng nhập để trở thành chủ xị"
-                            }
-                        Button(onClick = {
-                            if (isSigningInAsHost) {
-                                // huy dang nhap
-                                isSigningInAsHost = false
-                            } else if (isSigningInAsHost) {
-                                // dang xuat
-                                isSigningInAsHost = false
-                            } else {
-                                isSigningInAsHost = true
-                            }
-                        }) {
-                            Text(textButton)
-                        }
-                    }
-
-                    if (isSigningInAsHost) {
-                        Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                            OutlinedTextField(
-                                value = hostName,
-                                onValueChange = { hostName = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Hostname") },
-                                singleLine = true,
-                            )
-                            OutlinedTextField(
-                                value = hostPassword,
-                                onValueChange = { hostPassword = it },
-                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                                label = { Text("Password") },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                visualTransformation = PasswordVisualTransformation()
-                            )
-                            Button(
-                                onClick = {
-                                    if (hostName == "admin" && hostPassword == "fc671admin@2025") {
-                                        isSigningInAsHost = false
-                                        isSignedInAsHost = true
-                                        hostName = ""
-                                        hostPassword = ""
-                                    }
-                                },
-                                enabled = hostName.isNotEmpty() && hostPassword.isNotEmpty(),
-                            ) {
-                                Text("Dang nhap")
-                            }
-                        }
-                    }
-
+                        )
                 }
 
-
-                if (isSignedInAsHost && !aMatchOnGoing) {
-                    Button(onClick = {}) {
-                        Text("Tạo trận đấu")
+                composable(route = "create_match") {
+                    CreateMatch(viewModel = viewModel) {
+                        navController.popBackStack()
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-                LazyColumn() {
-                    items(items = uiState.matches) { match ->
-                        Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                            Text(match.name, style = MaterialTheme.typography.titleLarge)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Người chơi có thể chọn:", style = MaterialTheme.typography.titleMedium)
-
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                match.selectedPlayers.forEach { player ->
-
-                                    SuggestionChip(
-                                        onClick = {},
-                                        label = {
-                                            Text(player)
-                                        }
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Teams", style = MaterialTheme.typography.titleMedium)
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    "Captain",
-                                    modifier = Modifier.weight(1F),
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                                Text(
-                                    "Captain",
-                                    modifier = Modifier.weight(4F),
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                            }
-                            match.teams.map { team ->
-                                Row {
-                                    val builder = StringBuilder()
-                                    builder.append(team.leaderName)
-                                    if (match.selectingTeamId == team.id) {
-                                        builder.append("<<< Đang chọn")
-                                    }
-                                    Text(builder.toString(), modifier = Modifier.weight(1F))
-                                    FlowRow(
-                                        modifier = Modifier.weight(4F).padding(8.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        team.players.forEach { player ->
-
-                                            SuggestionChip(
-                                                onClick = {},
-                                                label = {
-                                                    Text(player)
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                composable(route = "match_histories"){
+                    MatchHistories(viewModel = viewModel, onBack = { navController.popBackStack() })
                 }
+
             }
         }
     }
