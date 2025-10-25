@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.onClick
@@ -78,6 +80,7 @@ fun CreateMatch(
     }) {
 
         Text("Bước 1: Chọn cầu thủ đã vote ra sân hôm nay", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(12.dp))
         FBox(modifier = Modifier.fillMaxWidth()) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -99,6 +102,7 @@ fun CreateMatch(
             }
         }
 
+        Spacer(Modifier.height(24.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -113,6 +117,7 @@ fun CreateMatch(
 
             }
         }
+        Spacer(Modifier.height(12.dp))
         FBox(modifier = Modifier.fillMaxWidth()) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -143,7 +148,9 @@ fun CreateMatch(
         }
 
         if (isSelectedVotePlayers) {
+            Spacer(Modifier.height(24.dp))
             Text("Bước 2: Chọn Captain từ danh sách cầu đủ đã vote", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(12.dp))
             FBox(modifier = Modifier.fillMaxWidth()) {
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -156,6 +163,7 @@ fun CreateMatch(
                 }
             }
         } else if (selectedPlayers.isNotEmpty()) {
+            Spacer(Modifier.height(24.dp))
             Button(onClick = {
                 isSelectedVotePlayers = true
             }) {
@@ -186,8 +194,6 @@ fun CreateMatch(
                             onGoing = true,
                             selectingTeamId = selectingTeamId,
                         )
-
-
 
                         viewModel.createMatch(match)
                     }

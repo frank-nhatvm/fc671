@@ -2,6 +2,7 @@ package com.fatherofapps.fc671
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -77,11 +80,16 @@ fun HomeScreen(
             uiState.isCreatedMatch ?: false
         }
     }
+
+    val isShowHistory by remember(uiState.matches) {
+        derivedStateOf { uiState.matches.any { !it.onGoing } }
+    }
+
     FScaffold(
         topBar = { FTopBar(modifier = Modifier.fillMaxWidth(), title = "FC671") }
     ) {
 
-        if (!isCreatedAMatch  && onGoingMatch == null) {
+        if (!isCreatedAMatch && onGoingMatch == null) {
             Button(onClick = {
                 onCreateMatch()
             }) {
@@ -91,7 +99,12 @@ fun HomeScreen(
 
 
         if (onGoingMatch != null) {
-            SelectingTeam(viewModel = viewModel, match = onGoingMatch!!, isHosted = isSignedInAsHost)
+            SelectingTeam(
+                viewModel = viewModel,
+                match = onGoingMatch!!,
+                isHosted = isSignedInAsHost,
+                isLoading = isLoading
+            )
         } else if (latestMatch != null) {
             Text(
                 "Trận gần nhất: ${latestMatch!!.name} ", style = MaterialTheme.typography.titleMedium.copy(
@@ -105,23 +118,23 @@ fun HomeScreen(
             }
         }
 
-        FUnderlineButton(modifier = Modifier.wrapContentSize().padding(top = 12.dp), title = "Lịch sử các trận đấu ") {
-            onViewHistories()
-        }
 
-
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        if (isShowHistory) {
+            FUnderlineButton(
+                modifier = Modifier.wrapContentSize().padding(top = 12.dp),
+                title = "Lịch sử các trận đấu "
+            ) {
+                onViewHistories()
             }
         }
+
 
     }
 
 }
 
 @Composable
-fun SelectingTeam(viewModel: AppViewModel, match: MatchData, isHosted: Boolean) {
+fun SelectingTeam(viewModel: AppViewModel, match: MatchData, isHosted: Boolean, isLoading: Boolean) {
 
     val hasAvailablePlayer by remember(match) {
         derivedStateOf {
@@ -130,49 +143,75 @@ fun SelectingTeam(viewModel: AppViewModel, match: MatchData, isHosted: Boolean) 
     }
 
     Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-        Text(match.name, style = MaterialTheme.typography.titleLarge)
+        Row {
+            Text(match.name, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            Spacer(Modifier.width(8.dp))
+            if (isLoading) {
+                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Cầu thủ có thể chọn:", style = MaterialTheme.typography.titleMedium)
+        Text("Cầu thủ có thể chọn:", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
 
         if (hasAvailablePlayer) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                match.validSelectedPlayer().forEach { player ->
+            LoadingBox(Modifier.fillMaxWidth(), isLoading = isLoading && isHosted) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    match.validSelectedPlayer().forEach { player ->
 
-                    SuggestionChip(
-                        onClick = {
-                            if (isHosted) {
-                                viewModel.selectPlayer(player = player, match = match)
+                        SuggestionChip(
+                            onClick = {
+                                if (isHosted) {
+                                    viewModel.selectPlayer(player = player, match = match)
+                                }
+                            },
+                            label = {
+                                Text(player)
                             }
-                        },
-                        label = {
-                            Text(player)
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Teams", style = MaterialTheme.typography.titleMedium)
+        Text("Teams", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+        LoadingBox(Modifier.fillMaxWidth(), isLoading = isLoading && isHosted) {
+            Column {
+                TeamCards(
+                    modifier = Modifier.fillMaxWidth(),
+                    teams = match.teams,
+                    selectingTeamID = match.selectingTeamId,
+                    previousSelectedTeamId = match.previousSelectedTeamId,
+                ) { player, teamId ->
+                    viewModel.unSelectPlayer(player, teamId, match)
+                }
 
-        TeamCards(
-            modifier = Modifier.fillMaxWidth(),
-            teams = match.teams,
-            selectingTeamID = match.selectingTeamId,
-        ) { player ->
-
-        }
-
-        if(!hasAvailablePlayer) {
-            Button(onClick = {
-                viewModel.completeMatch(match)
-            }){
-                Text("Hoàn thành")
+                if (!hasAvailablePlayer) {
+                    Button(modifier = Modifier.padding(top = 24.dp), onClick = {
+                        viewModel.completeMatch(match)
+                    }) {
+                        Text("Hoàn thành")
+                    }
+                }
             }
         }
 
+    }
+}
+
+@Composable
+fun LoadingBox(modifier: Modifier = Modifier, isLoading: Boolean, content: @Composable () -> Unit) {
+    Box(modifier = modifier) {
+        content()
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize().clickable(onClick = {
+
+            }), contentAlignment = Alignment.Center) {
+
+            }
+        }
     }
 }

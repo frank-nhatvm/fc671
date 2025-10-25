@@ -27,7 +27,9 @@ data class MatchData(
     @SerialName("on_going")
     val onGoing: Boolean = false,
     @Transient
-    val id: String = ""
+    val id: String = "",
+    @SerialName("previous_selected_team_id")
+    val previousSelectedTeamId: Int = -1,
 ) {
     fun validSelectedPlayer() = selectedPlayers.filter { it.isNotEmpty() && it != "null" }
 }
@@ -82,37 +84,72 @@ class AppViewModel : ViewModel() {
         }
     }
 
+    fun unSelectPlayer(player:String, teamId:Int, match: MatchData) {
+        if(match.id.trim().isEmpty()) return
+        withPermission {
+            console.log("UnSelecting player $player")
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true) }
+
+                val selectedPlayers = match.selectedPlayers.toMutableList()
+                selectedPlayers.add(player)
+
+                val updatedTeams = match.teams.map { team ->
+                    if (team.id == teamId) {
+                        val playersOfSelectingTeam = team.players.toMutableList()
+                        playersOfSelectingTeam.remove(player)
+                        team.copy(players = playersOfSelectingTeam.toList())
+                    } else {
+                        team
+                    }
+                }
+
+                val updatedMatch = match.copy(
+                    selectedPlayers = selectedPlayers,
+                    teams = updatedTeams,
+                    selectingTeamId = teamId,
+                    previousSelectedTeamId = -1
+                )
+                console.log("Updated Match: $updatedMatch")
+                updateMatch(updatedMatch)
+            }
+        }
+    }
+
     fun selectPlayer(player: String, match: MatchData) {
         if(match.id.trim().isEmpty()) return
-        console.log("Selecting player $player")
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+        withPermission {
+            console.log("Selecting player $player")
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true) }
 
-            val selectedPlayers = match.selectedPlayers.toMutableList()
-            selectedPlayers.remove(player)
-            console.log("Selected player $selectedPlayers")
-            val updatedTeams = match.teams.map { team ->
-                if (team.id == match.selectingTeamId) {
-                    val playersOfSelectingTeam = team.players.toMutableList()
-                    playersOfSelectingTeam.add(player)
-                    team.copy(players = playersOfSelectingTeam)
-                } else {
-                    team
+                val selectedPlayers = match.selectedPlayers.toMutableList()
+                selectedPlayers.remove(player)
+                console.log("Selected player $selectedPlayers")
+                val updatedTeams = match.teams.map { team ->
+                    if (team.id == match.selectingTeamId) {
+                        val playersOfSelectingTeam = team.players.toMutableList()
+                        playersOfSelectingTeam.add(player)
+                        team.copy(players = playersOfSelectingTeam)
+                    } else {
+                        team
+                    }
                 }
+
+                var nextSelectingTeamId = (match.selectingTeamId + 1)
+                if (nextSelectingTeamId > match.teams.size) nextSelectingTeamId = 1
+
+                console.log("Selecting team $nextSelectingTeamId")
+                console.log("Updated team $updatedTeams")
+                val updatedMatch = match.copy(
+                    selectedPlayers = selectedPlayers,
+                    teams = updatedTeams,
+                    selectingTeamId = nextSelectingTeamId,
+                    previousSelectedTeamId = match.selectingTeamId
+                )
+                console.log("Updated Match: $updatedMatch")
+                updateMatch(updatedMatch)
             }
-
-            var nextSelectingTeamId = (match.selectingTeamId + 1)
-            if (nextSelectingTeamId > match.teams.size) nextSelectingTeamId = 1
-
-            console.log("Selecting team $nextSelectingTeamId")
-            console.log("Updated team $updatedTeams")
-            val updatedMatch = match.copy(
-                selectedPlayers = selectedPlayers,
-                teams = updatedTeams,
-                selectingTeamId = nextSelectingTeamId
-            )
-            console.log("Updated Match: $updatedMatch")
-            updateMatch(updatedMatch)
         }
     }
 
@@ -143,5 +180,10 @@ class AppViewModel : ViewModel() {
         }
     }
 
+    private fun withPermission(action: ()->Unit) {
+        if(uiState.value.isHosted){
+            action()
+        }
+    }
 
 }
