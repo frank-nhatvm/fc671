@@ -1,10 +1,15 @@
 package com.fatherofapps.fc671
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,9 +28,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.fatherofapps.fc671.components.FBox
+import com.fatherofapps.fc671.components.FScaffold
+import com.fatherofapps.fc671.components.FTopBar
+import com.fatherofapps.fc671.components.FUnderlineButton
 import kotlin.random.Random
 
 @Composable
@@ -54,103 +64,110 @@ fun CreateMatch(
 
     val isLoading by remember(uiState.isLoading) { mutableStateOf(uiState.isLoading) }
 
-    var matchName by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.isCreatedMatch) {
-        if(uiState.isCreatedMatch == true) {
+        if (uiState.isCreatedMatch == true) {
             onBack()
         }
     }
 
-
-
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-
-        OutlinedTextField(value = matchName, onValueChange = {
-            matchName = it
-        }, label = { Text("Ngày thi đấu(tên trận)") })
+    FScaffold(topBar = {
+        FTopBar(modifier = Modifier.fillMaxWidth(), title = "Tạo trận đấu") {
+            onBack()
+        }
+    }) {
 
         Text("Bước 1: Chọn cầu thủ đã vote ra sân hôm nay", style = MaterialTheme.typography.titleMedium)
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            availablePlayers.forEach { player ->
-                SuggestionChip(onClick = {
-                    val players = availablePlayers.toMutableList()
-                    players.remove(player)
-                    availablePlayers = players
-
-                    val currentSelectedPlayers = selectedPlayers.toMutableList()
-                    currentSelectedPlayers.add(player)
-                    selectedPlayers = currentSelectedPlayers
-
-                }, label = { Text(player) })
-            }
-        }
-
-        Text("Cầu thủ đã chọn:", style = MaterialTheme.typography.titleMedium)
-        if (isSelectedVotePlayers) {
-
-            OutlinedButton(onClick = { isSelectedVotePlayers = !isSelectedVotePlayers }) {
-                Text(
-                    "Chọn lại cầu thủ",
-                    style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline),
-                )
-            }
-
-        }
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            selectedPlayers.forEach { player ->
-                SuggestionChip(onClick = {
-                    if(isSelectedVotePlayers){
-                        // selecting captain
-                        val currentSelectedCaptains = selectedCaptains.toMutableList()
-                        currentSelectedCaptains.add(player)
-                        selectedCaptains = currentSelectedCaptains
-
-                    }else{
-                        val players = availablePlayers.toMutableList()
-                        players.add(player)
-                        availablePlayers = players
-                    }
-
-                    val currentSelectedPlayers = selectedPlayers.toMutableList()
-                    currentSelectedPlayers.remove(player)
-                    selectedPlayers = currentSelectedPlayers
-                }, label = { Text(player) })
-            }
-        }
-
-        if (isSelectedVotePlayers) {
-            Text("Bước 2: Chọn Captain từ danh sách cầu đủ đã vote", style = MaterialTheme.typography.titleMedium)
+        FBox(modifier = Modifier.fillMaxWidth()) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                selectedCaptains.forEach { player ->
-                    SuggestionChip(onClick = {}, label = { Text(player) })
+                availablePlayers.forEach { player ->
+                    SuggestionChip(onClick = {
+                        val players = availablePlayers.toMutableList()
+                        players.remove(player)
+                        availablePlayers = players
+
+                        val currentSelectedPlayers = selectedPlayers.toMutableList()
+                        currentSelectedPlayers.add(player)
+                        selectedPlayers = currentSelectedPlayers
+
+                    }, label = { Text(player) })
                 }
             }
-        }else{
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Cầu thủ đã chọn:", style = MaterialTheme.typography.titleMedium)
+            if (isSelectedVotePlayers) {
+
+                FUnderlineButton(modifier = Modifier.wrapContentSize(), title = "Chọn lại cầu thủ") {
+                    isSelectedVotePlayers = !isSelectedVotePlayers
+                }
+
+            }
+        }
+        FBox(modifier = Modifier.fillMaxWidth()) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                selectedPlayers.forEach { player ->
+                    SuggestionChip(onClick = {
+                        if (isSelectedVotePlayers) {
+                            // selecting captain
+                            val currentSelectedCaptains = selectedCaptains.toMutableList()
+                            currentSelectedCaptains.add(player)
+                            selectedCaptains = currentSelectedCaptains
+
+                        } else {
+                            val players = availablePlayers.toMutableList()
+                            players.add(player)
+                            availablePlayers = players
+                        }
+
+                        val currentSelectedPlayers = selectedPlayers.toMutableList()
+                        currentSelectedPlayers.remove(player)
+                        selectedPlayers = currentSelectedPlayers
+                    }, label = { Text(player) })
+                }
+            }
+
+        }
+
+        if (isSelectedVotePlayers) {
+            Text("Bước 2: Chọn Captain từ danh sách cầu đủ đã vote", style = MaterialTheme.typography.titleMedium)
+            FBox(modifier = Modifier.fillMaxWidth()) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    selectedCaptains.forEach { player ->
+                        SuggestionChip(onClick = {}, label = { Text(player) })
+                    }
+                }
+            }
+        } else if (selectedPlayers.isNotEmpty()) {
             Button(onClick = {
                 isSelectedVotePlayers = true
-            }){
+            }) {
                 Text("Xác nhận chọn xong cầu thủ")
             }
 
         }
 
         if (isSelectedVotePlayers && selectedCaptains.size > 1) {
-            if(isLoading){
+            if (isLoading) {
                 CircularProgressIndicator()
-            }else {
+            } else {
                 Button(onClick = {
                     if (!isLoading) {
                         // tao tr
@@ -160,11 +177,11 @@ fun CreateMatch(
                                 leaderName = captain,
                             )
                         }
-                        val selectingTeamId = teams.map { it.id
+                        val selectingTeamId = teams.map {
+                            it.id
                         }.random()
                         val match = MatchData(
                             selectedPlayers = selectedPlayers,
-                            name = matchName,
                             teams = teams,
                             onGoing = true,
                             selectingTeamId = selectingTeamId,
@@ -180,5 +197,6 @@ fun CreateMatch(
             }
         }
     }
+
 
 }

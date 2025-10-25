@@ -30,10 +30,17 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            // icons
+
+
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
 
             implementation(libs.gitlive.firebase.firestore)
             implementation(libs.kotlinx.serialization.json)
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+
+
         }
 
         val jsMain by getting {

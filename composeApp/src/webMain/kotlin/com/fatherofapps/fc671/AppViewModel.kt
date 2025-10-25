@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -25,7 +28,7 @@ data class MatchData(
     val onGoing: Boolean = false,
     @Transient
     val id: String = ""
-){
+) {
     fun validSelectedPlayer() = selectedPlayers.filter { it.isNotEmpty() && it != "null" }
 }
 
@@ -36,7 +39,7 @@ data class TeamData(
     @SerialName("leader_name")
     val leaderName: String = "",
     val players: List<String> = listOf(),
-){
+) {
     fun validPlayers() = players.filter { it.isNotEmpty() && it != "null" }
 }
 
@@ -72,11 +75,22 @@ class AppViewModel : ViewModel() {
         }
     }
 
-    fun selectPlayer(player: String, match: MatchData) {
+    fun completeMatch(match: MatchData) {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            updateMatch(match.copy(onGoing = false))
+        }
+    }
+
+    fun selectPlayer(player: String, match: MatchData) {
+        if(match.id.trim().isEmpty()) return
+        console.log("Selecting player $player")
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
             val selectedPlayers = match.selectedPlayers.toMutableList()
             selectedPlayers.remove(player)
-
+            console.log("Selected player $selectedPlayers")
             val updatedTeams = match.teams.map { team ->
                 if (team.id == match.selectingTeamId) {
                     val playersOfSelectingTeam = team.players.toMutableList()
@@ -88,8 +102,10 @@ class AppViewModel : ViewModel() {
             }
 
             var nextSelectingTeamId = (match.selectingTeamId + 1)
-            if(nextSelectingTeamId > match.teams.size) nextSelectingTeamId = 1
+            if (nextSelectingTeamId > match.teams.size) nextSelectingTeamId = 1
 
+            console.log("Selecting team $nextSelectingTeamId")
+            console.log("Updated team $updatedTeams")
             val updatedMatch = match.copy(
                 selectedPlayers = selectedPlayers,
                 teams = updatedTeams,
@@ -102,34 +118,30 @@ class AppViewModel : ViewModel() {
 
     fun createMatch(match: MatchData) {
         viewModelScope.launch {
-            updateMatch(match)
+            _uiState.update { it.copy(isLoading = true, isCreatedMatch = null) }
+            updateMatch(match.copy(name = generateMatchName()))
         }
+    }
+
+    private fun generateMatchName(): String {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        return "Trận ${now.dayOfMonth}-${now.month}-${now.year}"
     }
 
     private suspend fun updateMatch(match: MatchData) {
         try {
-            _uiState.update { it.copy(isLoading = true, isCreatedMatch = null) }
-            // Use match.name as document ID if it’s unique, or let Firestore generate one
+            val documentID = match.id.takeIf { it.trim().isNotEmpty() } ?: db.collection("matches").document.id
             val docRef =
-                db.collection("matches").document(match.id.ifEmpty { match.name })
+                db.collection("matches").document(documentID)
 
             docRef.set(match)
             console.log("✅ Match created: ${match.name}")
-            _uiState.update { it.copy(isLoading = false, isCreatedMatch = true) }
+            _uiState.update { it.copy(isLoading = false, isCreatedMatch = true, isHosted = true) }
         } catch (e: Exception) {
             console.error("❌ Failed to create match:", e)
             _uiState.update { it.copy(isLoading = false, isCreatedMatch = false) }
         }
     }
 
-    fun signIn(hostName:String, hostPassword:String) {
-        if (hostName == "admin" && hostPassword == "fc671admin@2025") {
-            _uiState.update { it.copy(isHosted = true) }
-        }
-    }
-
-    fun signOut() {
-        _uiState.update{it.copy(isHosted = false)}
-    }
 
 }
