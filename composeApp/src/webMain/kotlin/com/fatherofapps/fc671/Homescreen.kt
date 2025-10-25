@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.fatherofapps.fc671.components.CopyToClipboardButton
 import com.fatherofapps.fc671.components.FBox
 import com.fatherofapps.fc671.components.FScaffold
 import com.fatherofapps.fc671.components.FTopBar
@@ -106,12 +107,21 @@ fun HomeScreen(
                 isLoading = isLoading
             )
         } else if (latestMatch != null) {
-            Text(
-                "Trận gần nhất: ${latestMatch!!.name} ", style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
-                modifier = Modifier.padding(top = 24.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+
+                Text(
+                    "Trận gần nhất: ${latestMatch!!.name} ", style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    modifier = Modifier.padding(top = 24.dp)
+                )
+
+                CopyToClipboardButton(modifier = Modifier.size(24.dp), textToCopy = latestMatch!!.textToCopy())
+
+            }
 
             FBox(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 TeamCards(modifier = Modifier.fillMaxWidth(), teams = latestMatch!!.teams)

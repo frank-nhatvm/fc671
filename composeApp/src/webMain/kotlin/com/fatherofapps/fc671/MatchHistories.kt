@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.fatherofapps.fc671.components.CopyToClipboardButton
 import com.fatherofapps.fc671.components.FBox
 import com.fatherofapps.fc671.components.FScaffold
 import com.fatherofapps.fc671.components.FTopBar
@@ -23,13 +24,22 @@ fun MatchHistories(viewModel: AppViewModel, onBack: () -> Unit) {
 
     val matches by remember(uiState) { derivedStateOf { uiState.matches.filter { !it.onGoing } } }
 
-    FScaffold(isScrollable = false, topBar = {   FTopBar(modifier = Modifier.fillMaxWidth(), title = "Các trận đấu đã diễn ra") {
-        onBack()
-    }}) {
+    FScaffold(isScrollable = false, topBar = {
+        FTopBar(modifier = Modifier.fillMaxWidth(), title = "Các trận đấu đã diễn ra") {
+            onBack()
+        }
+    }) {
         LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
             items(matches) { match ->
                 Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                    Text(match.name, style = MaterialTheme.typography.titleLarge)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(match.name, style = MaterialTheme.typography.titleLarge)
+                        CopyToClipboardButton(modifier = Modifier.size(24.dp), textToCopy = match.textToCopy())
+                    }
                     FBox(modifier = Modifier.fillMaxWidth()) {
                         TeamCards(modifier = Modifier.fillMaxWidth(), teams = match.teams)
                     }
@@ -45,7 +55,7 @@ fun TeamCards(
     teams: List<TeamData>,
     selectingTeamID: Int? = null,
     previousSelectedTeamId: Int? = null,
-    onSelectPlayer: ((String,Int) -> Unit)? = null
+    onSelectPlayer: ((String, Int) -> Unit)? = null
 ) {
     var dotCount by remember { mutableStateOf(0) }
 
@@ -84,12 +94,12 @@ fun TeamCards(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column( modifier = Modifier.weight(2F).padding(vertical = 2.dp)) {
-                    Text(text = "${team.leaderName} - ${team.id} ", )
-                  val updateText = if (selectingTeamID == team.id) {
+                Column(modifier = Modifier.weight(2F).padding(vertical = 2.dp)) {
+                    Text(text = "${team.leaderName} - ${team.id} ")
+                    val updateText = if (selectingTeamID == team.id) {
                         "Đang chọn $dots"
 
-                    }else{
+                    } else {
                         " "
                     }
                     Text(updateText, modifier = Modifier.padding(top = 2.dp), color = Color.Red)

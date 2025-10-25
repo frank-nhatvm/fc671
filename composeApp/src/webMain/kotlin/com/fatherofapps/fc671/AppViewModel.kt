@@ -32,6 +32,18 @@ data class MatchData(
     val previousSelectedTeamId: Int = -1,
 ) {
     fun validSelectedPlayer() = selectedPlayers.filter { it.isNotEmpty() && it != "null" }
+
+    fun textToCopy(): String {
+        if(onGoing){
+            return ""
+        }
+        val builder = StringBuilder()
+        teams.forEach { team ->
+            builder.append(team.textToCopy())
+            builder.append("\n")
+        }
+        return builder.toString()
+    }
 }
 
 @Serializable
@@ -43,6 +55,13 @@ data class TeamData(
     val players: List<String> = listOf(),
 ) {
     fun validPlayers() = players.filter { it.isNotEmpty() && it != "null" }
+    fun textToCopy(): String {
+        val builder = StringBuilder()
+        builder.append(leaderName)
+        builder.append(": ")
+        builder.append(validPlayers().joinToString(","))
+        return builder.toString()
+    }
 }
 
 
