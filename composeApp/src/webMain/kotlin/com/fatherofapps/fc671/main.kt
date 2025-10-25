@@ -10,11 +10,11 @@ import kotlinx.coroutines.launch
 
 fun initFirebaseForWeb() {
     val options = FirebaseOptions(
-        apiKey = Config.APIKEY,
-        authDomain = Config.AUTH_DOMAIN,
-        projectId = Config.PROJECT_ID,
-        applicationId = Config.APPLICATION_ID,
-        storageBucket = Config.STORAGE_BUCKET,
+        apiKey = AppConfig.APIKEY,
+        authDomain = AppConfig.AUTH_DOMAIN,
+        projectId = AppConfig.PROJECT_ID,
+        applicationId = AppConfig.APPLICATION_ID,
+        storageBucket = AppConfig.STORAGE_BUCKET,
     )
 
     // This initializer style is used in examples / community posts for GitLive SDK:
