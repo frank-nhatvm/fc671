@@ -28,25 +28,30 @@ fun App(
                 .fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer), // Full height & width
             contentAlignment = Alignment.TopCenter // Center horizontally for large screens
         ) {
-                NavHost(navController, startDestination = "home") {
-                    composable("home") {
-                        HomeScreen(
-                            viewModel = viewModel, onCreateMatch = { navController.navigate("create_match") },
-                            onViewHistories = {
-                                navController.navigate("match_histories")
-                            }
-                        )
+                NavHost(navController, startDestination = "maintain") {
+
+                    composable("maintain") {
+                        MaintainScreen()
                     }
 
-                    composable(route = "create_match") {
-                        CreateMatch(viewModel = viewModel) {
-                            navController.popBackStack()
-                        }
-                    }
-
-                    composable(route = "match_histories") {
-                        MatchHistories(viewModel = viewModel, onBack = { navController.popBackStack() })
-                    }
+//                    composable("home") {
+//                        HomeScreen(
+//                            viewModel = viewModel, onCreateMatch = { navController.navigate("create_match") },
+//                            onViewHistories = {
+//                                navController.navigate("match_histories")
+//                            }
+//                        )
+//                    }
+//
+//                    composable(route = "create_match") {
+//                        CreateMatch(viewModel = viewModel) {
+//                            navController.popBackStack()
+//                        }
+//                    }
+//
+//                    composable(route = "match_histories") {
+//                        MatchHistories(viewModel = viewModel, onBack = { navController.popBackStack() })
+//                    }
                 }
 
         }
